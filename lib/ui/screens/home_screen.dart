@@ -27,11 +27,11 @@ class _HomeScreenState extends State<HomeScreen> {
   
   int get _totalLent => _lentDebts
       .where((d) => !d.isSettled)
-      .fold(0, (sum, d) => sum + d.amount);
+      .fold(0, (sum, d) => sum + (d.remainingAmount > 0 ? d.remainingAmount : d.amount));
   
   int get _totalBorrowed => _borrowedDebts
       .where((d) => !d.isSettled)
-      .fold(0, (sum, d) => sum + d.amount);
+      .fold(0, (sum, d) => sum + (d.remainingAmount > 0 ? d.remainingAmount : d.amount));
 
   @override
   void initState() {
