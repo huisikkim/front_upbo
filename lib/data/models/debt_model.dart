@@ -25,15 +25,25 @@ class DebtModel {
 
   factory DebtModel.fromJson(Map<String, dynamic> json) {
     return DebtModel(
-      id: json['id'] is String ? int.parse(json['id']) : json['id'],
-      profileId: json['profile_id'] is String ? int.parse(json['profile_id']) : json['profile_id'],
+      id: _parseInt(json['id']),
+      profileId: _parseInt(json['profile_id']),
       profileName: json['profile_name'],
-      amount: json['amount'] is String ? int.parse(json['amount']) : json['amount'],
+      amount: _parseInt(json['amount']),
       transactionDate: DateTime.parse(json['transaction_date']),
       category: json['category'],
       memo: json['memo'],
       transactionType: json['transaction_type'] ?? 'lent',
       isSettled: json['is_settled'] ?? false,
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      return double.tryParse(value)?.toInt() ?? 0;
+    }
+    return 0;
   }
 }

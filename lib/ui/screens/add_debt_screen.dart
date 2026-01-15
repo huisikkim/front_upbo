@@ -35,12 +35,15 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
 
   Future<void> _loadProfiles() async {
     try {
+      print('🔹 프로필 목록 로딩 시작');
       final profiles = await _profileRepository.getProfiles();
+      print('🔹 프로필 목록 로딩 완료: ${profiles.length}개');
       setState(() {
         _profiles = profiles;
         _isLoadingProfiles = false;
       });
     } catch (e) {
+      print('❌ 프로필 목록 로딩 실패: $e');
       setState(() => _isLoadingProfiles = false);
     }
   }
