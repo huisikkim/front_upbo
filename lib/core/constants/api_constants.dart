@@ -11,4 +11,7 @@ class ApiConstants {
   
   // Debt endpoints
   static const String debts = '/debts';
+  
+  // Repayment endpoints
+  static const String repayments = '/repayments';
 }

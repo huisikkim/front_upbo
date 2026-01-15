@@ -4,7 +4,7 @@ import '../../data/models/profile_model.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
-import 'add_repayment_screen.dart';
+import 'debt_detail_screen.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
@@ -262,34 +262,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '거래 내역',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddRepaymentScreen(
-                        profileId: widget.profileId,
-                        profileName: _profile?.name ?? widget.name,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('상환 등록'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-              ),
-            ],
+          const Text(
+            '거래 내역',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 12),
           if (_debts.isEmpty)
@@ -312,77 +291,88 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   Widget _buildDebtItem(DebtModel debt) {
     final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: debt.isLent ? AppColors.primary.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        debt.isLent ? '빌려줌' : '빌림',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: debt.isLent ? AppColors.primary : AppColors.warning,
-                          fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () async {
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(builder: (_) => DebtDetailScreen(debtId: debt.id)),
+        );
+        if (result == true) {
+          _loadData();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: debt.isLent ? AppColors.primary.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          debt.isLent ? '빌려줌' : '빌림',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: debt.isLent ? AppColors.primary : AppColors.warning,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(date, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      const SizedBox(width: 8),
+                      Text(date, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                  if (debt.memo != null) ...[
+                    const SizedBox(height: 4),
+                    Text(debt.memo!, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
                   ],
-                ),
-                if (debt.memo != null) ...[
-                  const SizedBox(height: 4),
-                  Text(debt.memo!, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
                 ],
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.amount)}',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: debt.isLent ? AppColors.primary : AppColors.error,
-                ),
               ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: debt.isSettled ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  debt.isSettled ? '정산완료' : '미정산',
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.amount)}',
                   style: TextStyle(
-                    fontSize: 10,
-                    color: debt.isSettled ? AppColors.success : AppColors.warning,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: debt.isLent ? AppColors.primary : AppColors.error,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: debt.isSettled ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    debt.isSettled ? '정산완료' : '미정산',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: debt.isSettled ? AppColors.success : AppColors.warning,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

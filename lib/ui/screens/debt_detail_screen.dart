@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../theme/app_colors.dart';
+import 'add_repayment_screen.dart';
 
 class DebtDetailScreen extends StatefulWidget {
   final int debtId;
@@ -331,6 +332,45 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
               ),
             ),
           ),
+          if (!debt.isSettled) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () async {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddRepaymentScreen(
+                        debtId: debt.id,
+                        profileName: debt.profileName ?? '알 수 없음',
+                        remainingAmount: debt.amount,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    _hasChanges = true;
+                    _loadDebt();
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  side: const BorderSide(color: AppColors.primary),
+                ),
+                child: const Text(
+                  '상환 등록',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
