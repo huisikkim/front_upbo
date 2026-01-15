@@ -15,6 +15,11 @@ class ProfileRepository {
         .toList();
   }
 
+  Future<ProfileModel> getProfile(int profileId) async {
+    final response = await _dio.get('${ApiConstants.profiles}/$profileId');
+    return ProfileModel.fromJson(response.data);
+  }
+
   Future<ProfileModel> createProfile({
     required String name,
     String? relation,

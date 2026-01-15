@@ -3,9 +3,14 @@ import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 
 class AddRepaymentScreen extends StatefulWidget {
+  final int profileId;
   final String profileName;
 
-  const AddRepaymentScreen({super.key, required this.profileName});
+  const AddRepaymentScreen({
+    super.key,
+    required this.profileId,
+    required this.profileName,
+  });
 
   @override
   State<AddRepaymentScreen> createState() => _AddRepaymentScreenState();
