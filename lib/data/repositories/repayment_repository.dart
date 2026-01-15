@@ -41,4 +41,9 @@ class RepaymentRepository {
     );
     return RepaymentModel.fromJson(response.data);
   }
+
+  /// 상환 삭제
+  Future<void> deleteRepayment(int repaymentId) async {
+    await _dio.delete('${ApiConstants.repayments}/$repaymentId');
+  }
 }

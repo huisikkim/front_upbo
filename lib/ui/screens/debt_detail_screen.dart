@@ -482,58 +482,104 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
   Widget _buildRepaymentItem(RepaymentModel repayment) {
     final date = '${repayment.repaymentDate.year}.${repayment.repaymentDate.month.toString().padLeft(2, '0')}.${repayment.repaymentDate.day.toString().padLeft(2, '0')}';
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onLongPress: () => _showDeleteRepaymentDialog(repayment),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
             ),
-            child: const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  date,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                if (repayment.memo != null) ...[
-                  const SizedBox(height: 2),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    repayment.memo!,
+                    date,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.textPrimary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
+                  if (repayment.memo != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      repayment.memo!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
+            Text(
+              '-₩${_formatNumber(repayment.amount)}',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.success,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteRepaymentDialog(RepaymentModel repayment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('상환 삭제'),
+        content: Text('₩${_formatNumber(repayment.amount)} 상환 내역을 삭제하시겠습니까?\n삭제 시 채무 금액이 복원됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
           ),
-          Text(
-            '-₩${_formatNumber(repayment.amount)}',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.success,
-            ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteRepayment(repayment.id);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('삭제', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _deleteRepayment(int repaymentId) async {
+    try {
+      await _repaymentRepository.deleteRepayment(repaymentId);
+      _hasChanges = true;
+      _loadDebt();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('상환 내역이 삭제되었습니다')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('삭제 실패: $e')),
+        );
+      }
+    }
   }
 }
