@@ -77,4 +77,9 @@ class DebtRepository {
     );
     return DebtModel.fromJson(response.data);
   }
+
+  /// 채무 삭제
+  Future<void> deleteDebt(int debtId) async {
+    await _dio.delete('${ApiConstants.debts}/$debtId');
+  }
 }
