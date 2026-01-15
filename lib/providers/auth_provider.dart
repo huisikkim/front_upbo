@@ -9,14 +9,28 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   bool _isLoggedIn = false;
+  UserModel? _user;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isLoggedIn => _isLoggedIn;
+  UserModel? get user => _user;
 
   Future<void> checkAuthStatus() async {
     _isLoggedIn = await StorageService.hasToken();
+    if (_isLoggedIn) {
+      await fetchUser();
+    }
     notifyListeners();
+  }
+
+  Future<void> fetchUser() async {
+    try {
+      _user = await _authRepository.getMe();
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+    }
   }
 
   Future<UserModel?> register({
@@ -60,6 +74,7 @@ class AuthProvider extends ChangeNotifier {
       );
       await StorageService.saveToken(response.accessToken);
       _isLoggedIn = true;
+      await fetchUser();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -74,6 +89,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     await StorageService.deleteToken();
     _isLoggedIn = false;
+    _user = null;
     notifyListeners();
   }
 }

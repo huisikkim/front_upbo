@@ -23,101 +23,109 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            // 프로필 섹션
-            Container(
-              color: AppColors.white,
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: const Icon(
-                      Icons.person,
-                      size: 32,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          '홍길동',
-                          style: TextStyle(
-                            fontSize: 18,
+      body: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final user = auth.user;
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                // 프로필 섹션
+                Container(
+                  color: AppColors.white,
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: Text(
+                          user?.name.isNotEmpty == true ? user!.name[0] : '?',
+                          style: const TextStyle(
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primary,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'user@example.com',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.name ?? '사용자',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user?.email ?? '',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppColors.textHint),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 설정 메뉴
-            Container(
-              color: AppColors.white,
-              child: Column(
-                children: [
-                  _buildMenuItem(Icons.notifications_outlined, '알림 설정'),
-                  _buildDivider(),
-                  _buildMenuItem(Icons.lock_outline, '보안'),
-                  _buildDivider(),
-                  _buildMenuItem(Icons.language, '언어'),
-                  _buildDivider(),
-                  _buildMenuItem(Icons.help_outline, '도움말'),
-                  _buildDivider(),
-                  _buildMenuItem(Icons.info_outline, '앱 정보'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 로그아웃
-            Container(
-              color: AppColors.white,
-              child: ListTile(
-                leading: const Icon(Icons.logout, color: AppColors.error),
-                title: const Text(
-                  '로그아웃',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w500,
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.textHint),
+                    ],
                   ),
                 ),
-                onTap: () async {
-                  await context.read<AuthProvider>().logout();
-                  if (context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  }
-                },
-              ),
+                const SizedBox(height: 16),
+
+                // 설정 메뉴
+                Container(
+                  color: AppColors.white,
+                  child: Column(
+                    children: [
+                      _buildMenuItem(Icons.notifications_outlined, '알림 설정'),
+                      _buildDivider(),
+                      _buildMenuItem(Icons.lock_outline, '보안'),
+                      _buildDivider(),
+                      _buildMenuItem(Icons.language, '언어'),
+                      _buildDivider(),
+                      _buildMenuItem(Icons.help_outline, '도움말'),
+                      _buildDivider(),
+                      _buildMenuItem(Icons.info_outline, '앱 정보'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 로그아웃
+                Container(
+                  color: AppColors.white,
+                  child: ListTile(
+                    leading: const Icon(Icons.logout, color: AppColors.error),
+                    title: const Text(
+                      '로그아웃',
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onTap: () async {
+                      await context.read<AuthProvider>().logout();
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
-            const SizedBox(height: 32),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -36,4 +36,9 @@ class AuthRepository {
     );
     return AuthResponse.fromJson(response.data);
   }
+
+  Future<UserModel> getMe() async {
+    final response = await _dio.get(ApiConstants.me);
+    return UserModel.fromJson(response.data);
+  }
 }
