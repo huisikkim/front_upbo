@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/debt_model.dart';
+import '../../data/models/repayment_model.dart';
 import '../../data/repositories/debt_repository.dart';
+import '../../data/repositories/repayment_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_repayment_screen.dart';
 
@@ -15,24 +17,49 @@ class DebtDetailScreen extends StatefulWidget {
 
 class _DebtDetailScreenState extends State<DebtDetailScreen> {
   final _debtRepository = DebtRepository();
+  final _repaymentRepository = RepaymentRepository();
   DebtModel? _debt;
+  List<RepaymentModel> _repayments = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadDebt();
+    _loadData();
   }
 
-  Future<void> _loadDebt() async {
+  Future<void> _loadData() async {
     try {
-      final debt = await _debtRepository.getDebt(widget.debtId);
+      final results = await Future.wait([
+        _debtRepository.getDebt(widget.debtId),
+        _repaymentRepository.getRepayments(debtId: widget.debtId),
+      ]);
       setState(() {
-        _debt = debt;
+        _debt = results[0] as DebtModel;
+        _repayments = results[1] as List<RepaymentModel>;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터 로드 실패: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadDebt() async {
+    try {
+      final results = await Future.wait([
+        _debtRepository.getDebt(widget.debtId),
+        _repaymentRepository.getRepayments(debtId: widget.debtId),
+      ]);
+      setState(() {
+        _debt = results[0] as DebtModel;
+        _repayments = results[1] as List<RepaymentModel>;
+      });
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('데이터 로드 실패: $e')),
@@ -226,6 +253,10 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
                       _buildHeader(),
                       const SizedBox(height: 16),
                       _buildDetailSection(),
+                      if (_repayments.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildRepaymentSection(),
+                      ],
                     ],
                   ),
                 ),
@@ -411,6 +442,98 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
     return number.toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},',
+    );
+  }
+
+  Widget _buildRepaymentSection() {
+    return Container(
+      color: AppColors.white,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '상환 내역',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '총 ${_repayments.length}건',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ..._repayments.map((r) => _buildRepaymentItem(r)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRepaymentItem(RepaymentModel repayment) {
+    final date = '${repayment.repaymentDate.year}.${repayment.repaymentDate.month.toString().padLeft(2, '0')}.${repayment.repaymentDate.day.toString().padLeft(2, '0')}';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.payments_outlined, color: AppColors.success, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  date,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (repayment.memo != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    repayment.memo!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Text(
+            '-₩${_formatNumber(repayment.amount)}',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.success,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
