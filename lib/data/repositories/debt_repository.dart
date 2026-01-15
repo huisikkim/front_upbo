@@ -58,4 +58,23 @@ class DebtRepository {
     );
     return DebtModel.fromJson(response.data);
   }
+
+  /// 채무 수정
+  Future<DebtModel> updateDebt({
+    required int debtId,
+    String? category,
+    String? memo,
+    bool? isSettled,
+  }) async {
+    final data = <String, dynamic>{};
+    if (category != null) data['category'] = category;
+    if (memo != null) data['memo'] = memo;
+    if (isSettled != null) data['is_settled'] = isSettled;
+
+    final response = await _dio.put(
+      '${ApiConstants.debts}/$debtId',
+      data: data,
+    );
+    return DebtModel.fromJson(response.data);
+  }
 }

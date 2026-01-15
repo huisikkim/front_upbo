@@ -40,6 +40,100 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
     }
   }
 
+  Future<void> _toggleSettled() async {
+    if (_debt == null) return;
+    try {
+      final updated = await _debtRepository.updateDebt(
+        debtId: _debt!.id,
+        isSettled: !_debt!.isSettled,
+      );
+      setState(() => _debt = updated);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(updated.isSettled ? '정산 완료 처리되었습니다' : '미정산 처리되었습니다')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('상태 변경 실패: $e')),
+        );
+      }
+    }
+  }
+
+  void _showEditDialog() {
+    if (_debt == null) return;
+    final categoryController = TextEditingController(text: _debt!.category ?? '');
+    final memoController = TextEditingController(text: _debt!.memo ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('채무 수정'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(
+                labelText: '카테고리',
+                hintText: '예: 저녁값, 교통비',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: memoController,
+              decoration: const InputDecoration(
+                labelText: '메모',
+                hintText: '메모를 입력하세요',
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _updateDebt(
+                category: categoryController.text.isEmpty ? null : categoryController.text,
+                memo: memoController.text.isEmpty ? null : memoController.text,
+              );
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateDebt({String? category, String? memo}) async {
+    try {
+      final updated = await _debtRepository.updateDebt(
+        debtId: _debt!.id,
+        category: category,
+        memo: memo,
+      );
+      setState(() => _debt = updated);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('수정되었습니다')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('수정 실패: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,6 +154,12 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.textPrimary),
+            onPressed: _showEditDialog,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -155,6 +255,28 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
           _buildDetailRow('거래일', date),
           if (debt.category != null) _buildDetailRow('카테고리', debt.category!),
           if (debt.memo != null) _buildDetailRow('메모', debt.memo!),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _toggleSettled,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: debt.isSettled ? AppColors.warning : AppColors.success,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                debt.isSettled ? '미정산으로 변경' : '정산 완료 처리',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
