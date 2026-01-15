@@ -151,8 +151,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
     final isPositive = totalDebt >= 0;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ProfileDetailScreen(
@@ -161,6 +161,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
             ),
           ),
         );
+        if (result == true) {
+          _loadProfiles();
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
