@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../data/models/debt_model.dart';
 import '../../data/models/profile_model.dart';
+import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_repayment_screen.dart';
@@ -21,25 +23,35 @@ class ProfileDetailScreen extends StatefulWidget {
 
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   final _profileRepository = ProfileRepository();
+  final _debtRepository = DebtRepository();
   ProfileModel? _profile;
+  List<DebtModel> _debts = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadData();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadData() async {
     try {
-      final profile = await _profileRepository.getProfile(widget.profileId);
+      final results = await Future.wait([
+        _profileRepository.getProfile(widget.profileId),
+        _debtRepository.getDebts(profileId: widget.profileId),
+      ]);
       setState(() {
-        _profile = profile;
+        _profile = results[0] as ProfileModel;
+        _debts = results[1] as List<DebtModel>;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadProfile() async {
+    await _loadData();
   }
 
   Future<void> _showDeleteDialog() async {
@@ -280,14 +292,95 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                '거래 내역이 없습니다',
-                style: TextStyle(color: AppColors.textSecondary),
+          if (_debts.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  '거래 내역이 없습니다',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ),
+            )
+          else
+            ..._debts.map((debt) => _buildDebtItem(debt)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebtItem(DebtModel debt) {
+    final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: debt.isLent ? AppColors.primary.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        debt.isLent ? '빌려줌' : '빌림',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: debt.isLent ? AppColors.primary : AppColors.warning,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(date, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ],
+                ),
+                if (debt.memo != null) ...[
+                  const SizedBox(height: 4),
+                  Text(debt.memo!, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
+                ],
+              ],
             ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.amount)}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: debt.isLent ? AppColors.primary : AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: debt.isSettled ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  debt.isSettled ? '정산완료' : '미정산',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: debt.isSettled ? AppColors.success : AppColors.warning,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

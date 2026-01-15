@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../data/models/debt_model.dart';
+import '../../data/repositories/debt_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_debt_screen.dart';
+import 'transaction_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,7 +13,50 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _debtRepository = DebtRepository();
   int _selectedTab = 0; // 0: 내가 빌려준 것, 1: 내가 빌린 것
+  
+  List<DebtModel> _lentDebts = [];
+  List<DebtModel> _borrowedDebts = [];
+  bool _isLoading = true;
+  
+  int get _totalLent => _lentDebts
+      .where((d) => !d.isSettled)
+      .fold(0, (sum, d) => sum + d.amount);
+  
+  int get _totalBorrowed => _borrowedDebts
+      .where((d) => !d.isSettled)
+      .fold(0, (sum, d) => sum + d.amount);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDebts();
+  }
+
+  Future<void> _loadDebts() async {
+    setState(() => _isLoading = true);
+    try {
+      final results = await Future.wait([
+        _debtRepository.getDebts(transactionType: 'lent'),
+        _debtRepository.getDebts(transactionType: 'borrowed'),
+      ]);
+      setState(() {
+        _lentDebts = results[0];
+        _borrowedDebts = results[1];
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터 로드 실패: $e')),
+        );
+      }
+    }
+  }
+
+  List<DebtModel> get _currentDebts => _selectedTab == 0 ? _lentDebts : _borrowedDebts;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                '전체 요약',
+                '받을 돈',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -109,27 +155,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            '₩1,250,000',
-            style: TextStyle(
+          Text(
+            '₩${_formatNumber(_totalLent)}',
+            style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.arrow_downward, size: 14, color: AppColors.primary),
-              const SizedBox(width: 4),
-              Text(
-                '이번 달 받을 예정',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
+          Text(
+            '미정산 ${_lentDebts.where((d) => !d.isSettled).length}건',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 16),
           const Divider(color: AppColors.border),
@@ -139,27 +179,32 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     '갚을 돈',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    '₩450,000',
-                    style: TextStyle(
+                    '₩${_formatNumber(_totalBorrowed)}',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.error,
                     ),
                   ),
                 ],
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TransactionListScreen()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -234,21 +279,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecentTransactions() {
+    final recentDebts = _currentDebts.take(5).toList();
+    
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              '최근 거래 내역',
-              style: TextStyle(
+            Text(
+              _selectedTab == 0 ? '빌려준 내역' : '빌린 내역',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TransactionListScreen()),
+                );
+              },
               child: const Text(
                 '전체보기 >',
                 style: TextStyle(
@@ -260,15 +312,26 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        _buildTransactionItem('김철수', '2023.10.24', '점심값', 12000, true),
-        _buildTransactionItem('이지은', '2023.10.22', '택시비', 5500, false),
-        _buildTransactionItem('박지민', '2023.10.15', '생일선물', 50000, true),
-        _buildTransactionItem('최준호', '2023.10.10', '카페', 15000, false),
+        if (_isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (recentDebts.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              '거래 내역이 없습니다',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          )
+        else
+          ...recentDebts.map((debt) => _buildTransactionItem(debt)),
       ],
     );
   }
 
-  Widget _buildTransactionItem(String name, String date, String memo, int amount, bool isSettled) {
+  Widget _buildTransactionItem(DebtModel debt) {
+    final name = debt.profileName ?? '알 수 없음';
+    final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -304,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$date · $memo',
+                  '$date${debt.memo != null ? ' · ${debt.memo}' : ''}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -317,25 +380,25 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₩${_formatNumber(amount)}',
+                '₩${_formatNumber(debt.amount)}',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isSettled ? AppColors.primary : AppColors.textPrimary,
+                  color: debt.isLent ? AppColors.primary : AppColors.error,
                 ),
               ),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isSettled ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
+                  color: debt.isSettled ? AppColors.success.withOpacity(0.1) : AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  isSettled ? '정산완료' : '미정산',
+                  debt.isSettled ? '정산완료' : '미정산',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isSettled ? AppColors.success : AppColors.warning,
+                    color: debt.isSettled ? AppColors.success : AppColors.warning,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
