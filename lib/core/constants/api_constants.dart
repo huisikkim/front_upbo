@@ -8,4 +8,7 @@ class ApiConstants {
   
   // Profile endpoints
   static const String profiles = '/profiles';
+  
+  // Debt endpoints
+  static const String debts = '/debts';
 }

@@ -1,40 +1,39 @@
 class DebtModel {
   final int id;
   final int profileId;
-  final String profileName;
+  final String? profileName;
   final int amount;
-  final DateTime date;
+  final DateTime transactionDate;
+  final String? category;
   final String? memo;
-  final String? imageUrl;
-  final bool isLent; // true: 빌려줌, false: 빌림
+  final String transactionType; // "lent" | "borrowed"
   final bool isSettled;
-  final int remainingAmount;
 
   DebtModel({
     required this.id,
     required this.profileId,
-    required this.profileName,
+    this.profileName,
     required this.amount,
-    required this.date,
+    required this.transactionDate,
+    this.category,
     this.memo,
-    this.imageUrl,
-    required this.isLent,
+    required this.transactionType,
     this.isSettled = false,
-    this.remainingAmount = 0,
   });
+
+  bool get isLent => transactionType == 'lent';
 
   factory DebtModel.fromJson(Map<String, dynamic> json) {
     return DebtModel(
-      id: json['id'],
-      profileId: json['profile_id'],
-      profileName: json['profile_name'] ?? '',
-      amount: json['amount'],
-      date: DateTime.parse(json['date']),
+      id: json['id'] is String ? int.parse(json['id']) : json['id'],
+      profileId: json['profile_id'] is String ? int.parse(json['profile_id']) : json['profile_id'],
+      profileName: json['profile_name'],
+      amount: json['amount'] is String ? int.parse(json['amount']) : json['amount'],
+      transactionDate: DateTime.parse(json['transaction_date']),
+      category: json['category'],
       memo: json['memo'],
-      imageUrl: json['image_url'],
-      isLent: json['is_lent'] ?? true,
+      transactionType: json['transaction_type'] ?? 'lent',
       isSettled: json['is_settled'] ?? false,
-      remainingAmount: json['remaining_amount'] ?? 0,
     );
   }
 }
