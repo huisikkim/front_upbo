@@ -3,6 +3,7 @@ import '../../data/models/profile_model.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_repayment_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   final int profileId;
@@ -64,7 +65,19 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
-            onPressed: () {},
+            onPressed: _profile != null
+                ? () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditProfileScreen(profile: _profile!),
+                      ),
+                    );
+                    if (result == true) {
+                      _loadProfile();
+                    }
+                  }
+                : null,
           ),
         ],
       ),

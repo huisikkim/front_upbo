@@ -39,4 +39,25 @@ class ProfileRepository {
     );
     return ProfileModel.fromJson(response.data);
   }
+
+  Future<ProfileModel> updateProfile(int profileId, {
+    String? name,
+    String? relation,
+    String? organization,
+    String? phone,
+    String? memo,
+  }) async {
+    final data = <String, dynamic>{};
+    if (name != null) data['name'] = name;
+    if (relation != null) data['relation'] = relation;
+    if (organization != null) data['organization'] = organization;
+    if (phone != null) data['phone'] = phone;
+    if (memo != null) data['memo'] = memo;
+
+    final response = await _dio.put(
+      '${ApiConstants.profiles}/$profileId',
+      data: data,
+    );
+    return ProfileModel.fromJson(response.data);
+  }
 }
