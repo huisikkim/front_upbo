@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'data/services/api_service.dart';
 import 'providers/auth_provider.dart';
 import 'ui/screens/login_screen.dart';
-import 'ui/screens/home_screen.dart';
+import 'ui/screens/main_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,7 +51,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         if (auth.isLoggedIn) {
-          return const HomeScreen();
+          return const MainScreen();
         }
         return const LoginScreen();
       },
