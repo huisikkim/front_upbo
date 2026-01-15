@@ -149,6 +149,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Widget _buildContactItem(BuildContext context, ProfileModel profile) {
     final totalDebt = profile.totalDebt;
     final isPositive = totalDebt >= 0;
+    final hasTransactions = profile.totalLent > 0 || profile.totalBorrowed > 0;
 
     return GestureDetector(
       onTap: () async {
@@ -232,13 +233,21 @@ class _ContactsScreenState extends State<ContactsScreen> {
                       color: isPositive ? AppColors.primary : AppColors.error,
                     ),
                   ),
-                ] else
+                ] else if (hasTransactions)
                   const Text(
                     '정산 완료',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.success,
                       fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else
+                  const Text(
+                    '거래 없음',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
               ],
