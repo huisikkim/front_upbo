@@ -60,4 +60,8 @@ class ProfileRepository {
     );
     return ProfileModel.fromJson(response.data);
   }
+
+  Future<void> deleteProfile(int profileId) async {
+    await _dio.delete('${ApiConstants.profiles}/$profileId');
+  }
 }
