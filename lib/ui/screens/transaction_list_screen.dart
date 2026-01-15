@@ -213,6 +213,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   Widget _buildTransactionItem(DebtModel debt) {
     final name = _getProfileName(debt);
     final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
+    final displayAmount = debt.remainingAmount > 0 ? debt.remainingAmount : debt.amount;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -282,7 +283,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.amount)}',
+                '${debt.isLent ? '+' : '-'}₩${_formatNumber(displayAmount)}',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

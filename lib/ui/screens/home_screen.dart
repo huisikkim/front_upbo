@@ -354,6 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTransactionItem(DebtModel debt) {
     final name = _getProfileName(debt);
     final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
+    final displayAmount = debt.remainingAmount > 0 ? debt.remainingAmount : debt.amount;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -403,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₩${_formatNumber(debt.amount)}',
+                '₩${_formatNumber(displayAmount)}',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

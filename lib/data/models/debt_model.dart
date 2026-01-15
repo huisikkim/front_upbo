@@ -3,6 +3,7 @@ class DebtModel {
   final int profileId;
   final String? profileName;
   final int amount;
+  final int remainingAmount;
   final DateTime transactionDate;
   final String? category;
   final String? memo;
@@ -14,6 +15,7 @@ class DebtModel {
     required this.profileId,
     this.profileName,
     required this.amount,
+    required this.remainingAmount,
     required this.transactionDate,
     this.category,
     this.memo,
@@ -24,11 +26,13 @@ class DebtModel {
   bool get isLent => transactionType == 'lent';
 
   factory DebtModel.fromJson(Map<String, dynamic> json) {
+    final amount = _parseInt(json['amount']);
     return DebtModel(
       id: _parseInt(json['id']),
       profileId: _parseInt(json['profile_id']),
       profileName: json['profile_name'],
-      amount: _parseInt(json['amount']),
+      amount: amount,
+      remainingAmount: _parseInt(json['remaining_amount']),
       transactionDate: DateTime.parse(json['transaction_date']),
       category: json['category'],
       memo: json['memo'],

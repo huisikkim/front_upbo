@@ -257,7 +257,7 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.amount)}',
+            '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.remainingAmount > 0 ? debt.remainingAmount : debt.amount)}',
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.bold,
@@ -344,7 +344,7 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
                       builder: (_) => AddRepaymentScreen(
                         debtId: debt.id,
                         profileName: debt.profileName ?? '알 수 없음',
-                        remainingAmount: debt.amount,
+                        remainingAmount: debt.remainingAmount > 0 ? debt.remainingAmount : debt.amount,
                       ),
                     ),
                   );

@@ -346,7 +346,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.amount)}',
+                  '${debt.isLent ? '+' : '-'}₩${_formatNumber(debt.remainingAmount > 0 ? debt.remainingAmount : debt.amount)}',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
