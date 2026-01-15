@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../data/models/dashboard_model.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/models/profile_model.dart';
+import '../../data/repositories/dashboard_repository.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
@@ -16,41 +18,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _dashboardRepository = DashboardRepository();
   final _debtRepository = DebtRepository();
   final _profileRepository = ProfileRepository();
   int _selectedTab = 0; // 0: 내가 빌려준 것, 1: 내가 빌린 것
   
+  DashboardModel? _dashboard;
   List<DebtModel> _lentDebts = [];
   List<DebtModel> _borrowedDebts = [];
   Map<int, String> _profileNames = {};
   bool _isLoading = true;
-  
-  int get _totalLent => _lentDebts
-      .where((d) => !d.isSettled)
-      .fold(0, (sum, d) => sum + (d.remainingAmount > 0 ? d.remainingAmount : d.amount));
-  
-  int get _totalBorrowed => _borrowedDebts
-      .where((d) => !d.isSettled)
-      .fold(0, (sum, d) => sum + (d.remainingAmount > 0 ? d.remainingAmount : d.amount));
 
   @override
   void initState() {
     super.initState();
-    _loadDebts();
+    _loadData();
   }
 
-  Future<void> _loadDebts() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
+        _dashboardRepository.getSummary(),
         _debtRepository.getDebts(transactionType: 'lent'),
         _debtRepository.getDebts(transactionType: 'borrowed'),
         _profileRepository.getProfiles(),
       ]);
       setState(() {
-        _lentDebts = results[0] as List<DebtModel>;
-        _borrowedDebts = results[1] as List<DebtModel>;
-        final profiles = results[2] as List<ProfileModel>;
+        _dashboard = results[0] as DashboardModel;
+        _lentDebts = results[1] as List<DebtModel>;
+        _borrowedDebts = results[2] as List<DebtModel>;
+        final profiles = results[3] as List<ProfileModel>;
         _profileNames = {for (var p in profiles) p.id: p.name};
         _isLoading = false;
       });
@@ -168,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '₩${_formatNumber(_totalLent)}',
+            '₩${_formatNumber(_dashboard?.lentRemaining ?? 0)}',
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -201,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '₩${_formatNumber(_totalBorrowed)}',
+                    '₩${_formatNumber(_dashboard?.borrowedRemaining ?? 0)}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -342,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(builder: (_) => DebtDetailScreen(debtId: debt.id)),
               );
               if (result == true) {
-                _loadDebts();
+                _loadData();
               }
             },
             child: _buildTransactionItem(debt),
