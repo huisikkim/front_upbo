@@ -176,13 +176,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: _debts.length,
                     itemBuilder: (context, index) => GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        final result = await Navigator.push<bool>(
                           context,
                           MaterialPageRoute(
                             builder: (_) => DebtDetailScreen(debtId: _debts[index].id),
                           ),
                         );
+                        if (result == true) {
+                          _loadDebts();
+                        }
                       },
                       child: _buildTransactionItem(_debts[index]),
                     ),

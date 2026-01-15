@@ -40,6 +40,8 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
     }
   }
 
+  bool _hasChanges = false;
+
   Future<void> _toggleSettled() async {
     if (_debt == null) return;
     try {
@@ -47,7 +49,10 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
         debtId: _debt!.id,
         isSettled: !_debt!.isSettled,
       );
-      setState(() => _debt = updated);
+      setState(() {
+        _debt = updated;
+        _hasChanges = true;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(updated.isSettled ? '정산 완료 처리되었습니다' : '미정산 처리되었습니다')),
@@ -119,7 +124,10 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
         category: category,
         memo: memo,
       );
-      setState(() => _debt = updated);
+      setState(() {
+        _debt = updated;
+        _hasChanges = true;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('수정되었습니다')),
@@ -143,7 +151,7 @@ class _DebtDetailScreenState extends State<DebtDetailScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, _hasChanges),
         ),
         title: const Text(
           '거래 상세',

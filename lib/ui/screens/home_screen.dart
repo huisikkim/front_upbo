@@ -325,11 +325,14 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         else
           ...recentDebts.map((debt) => GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              final result = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(builder: (_) => DebtDetailScreen(debtId: debt.id)),
               );
+              if (result == true) {
+                _loadDebts();
+              }
             },
             child: _buildTransactionItem(debt),
           )),
