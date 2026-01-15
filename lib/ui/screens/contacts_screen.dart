@@ -1,10 +1,48 @@
 import 'package:flutter/material.dart';
+import '../../data/models/profile_model.dart';
+import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_profile_screen.dart';
 import 'profile_detail_screen.dart';
 
-class ContactsScreen extends StatelessWidget {
+class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
+
+  @override
+  State<ContactsScreen> createState() => _ContactsScreenState();
+}
+
+class _ContactsScreenState extends State<ContactsScreen> {
+  final _profileRepository = ProfileRepository();
+  List<ProfileModel> _profiles = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfiles();
+  }
+
+  Future<void> _loadProfiles() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final profiles = await _profileRepository.getProfiles();
+      setState(() {
+        _profiles = profiles;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,45 +62,104 @@ class ContactsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_outlined, color: AppColors.textPrimary),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AddProfileScreen()),
               );
+              if (result == true) {
+                _loadProfiles();
+              }
             },
           ),
         ],
       ),
-      body: ListView.builder(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('오류: $_error'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadProfiles,
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_profiles.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline, size: 64, color: AppColors.textHint),
+            const SizedBox(height: 16),
+            const Text(
+              '등록된 친구가 없습니다',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddProfileScreen()),
+                );
+                if (result == true) {
+                  _loadProfiles();
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('친구 추가'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadProfiles,
+      child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 8,
+        itemCount: _profiles.length,
         itemBuilder: (context, index) {
-          return _buildContactItem(
-            context,
-            name: ['김철수', '이지은', '박지민', '최준호', '정민수', '한소희', '강동원', '송혜교'][index],
-            relationship: ['친구', '동료', '가족', '친구', '선배', '동료', '후배', '친구'][index],
-            organization: ['삼성전자', 'LG전자', '-', '네이버', '카카오', 'SK', '현대', '구글'][index],
-            totalDebt: [120000, -55000, 500000, 0, -150000, 80000, 0, 230000][index],
-          );
+          final profile = _profiles[index];
+          return _buildContactItem(context, profile);
         },
       ),
     );
   }
 
-  Widget _buildContactItem(
-    BuildContext context, {
-    required String name,
-    required String relationship,
-    required String organization,
-    required int totalDebt,
-  }) {
+  Widget _buildContactItem(BuildContext context, ProfileModel profile) {
+    final totalDebt = profile.totalDebt;
     final isPositive = totalDebt >= 0;
-    
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => ProfileDetailScreen(name: name)),
+          MaterialPageRoute(
+            builder: (_) => ProfileDetailScreen(
+              profileId: profile.id,
+              name: profile.name,
+            ),
+          ),
         );
       },
       child: Container(
@@ -78,7 +175,7 @@ class ContactsScreen extends StatelessWidget {
               radius: 28,
               backgroundColor: AppColors.primary.withOpacity(0.1),
               child: Text(
-                name[0],
+                profile.name[0],
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -92,7 +189,7 @@ class ContactsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    profile.name,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -101,7 +198,9 @@ class ContactsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$relationship · $organization',
+                    [profile.relation, profile.organization]
+                        .where((e) => e != null && e.isNotEmpty)
+                        .join(' · '),
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,

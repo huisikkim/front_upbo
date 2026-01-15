@@ -3,9 +3,14 @@ import '../theme/app_colors.dart';
 import 'add_repayment_screen.dart';
 
 class ProfileDetailScreen extends StatelessWidget {
+  final int profileId;
   final String name;
 
-  const ProfileDetailScreen({super.key, required this.name});
+  const ProfileDetailScreen({
+    super.key,
+    required this.profileId,
+    required this.name,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -5,6 +5,16 @@ import '../services/api_service.dart';
 class ProfileRepository {
   final _dio = ApiService.dio;
 
+  Future<List<ProfileModel>> getProfiles({int skip = 0, int limit = 100}) async {
+    final response = await _dio.get(
+      ApiConstants.profiles,
+      queryParameters: {'skip': skip, 'limit': limit},
+    );
+    return (response.data as List)
+        .map((json) => ProfileModel.fromJson(json))
+        .toList();
+  }
+
   Future<ProfileModel> createProfile({
     required String name,
     String? relation,
