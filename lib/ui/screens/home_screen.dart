@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/debt_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/debt_repository.dart';
+import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_debt_screen.dart';
 import 'debt_detail_screen.dart';
@@ -15,10 +17,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _debtRepository = DebtRepository();
+  final _profileRepository = ProfileRepository();
   int _selectedTab = 0; // 0: 내가 빌려준 것, 1: 내가 빌린 것
   
   List<DebtModel> _lentDebts = [];
   List<DebtModel> _borrowedDebts = [];
+  Map<int, String> _profileNames = {};
   bool _isLoading = true;
   
   int get _totalLent => _lentDebts
@@ -41,10 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final results = await Future.wait([
         _debtRepository.getDebts(transactionType: 'lent'),
         _debtRepository.getDebts(transactionType: 'borrowed'),
+        _profileRepository.getProfiles(),
       ]);
       setState(() {
-        _lentDebts = results[0];
-        _borrowedDebts = results[1];
+        _lentDebts = results[0] as List<DebtModel>;
+        _borrowedDebts = results[1] as List<DebtModel>;
+        final profiles = results[2] as List<ProfileModel>;
+        _profileNames = {for (var p in profiles) p.id: p.name};
         _isLoading = false;
       });
     } catch (e) {
@@ -55,6 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
+  }
+
+  String _getProfileName(DebtModel debt) {
+    return debt.profileName ?? _profileNames[debt.profileId] ?? '알 수 없음';
   }
 
   List<DebtModel> get _currentDebts => _selectedTab == 0 ? _lentDebts : _borrowedDebts;
@@ -341,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTransactionItem(DebtModel debt) {
-    final name = debt.profileName ?? '알 수 없음';
+    final name = _getProfileName(debt);
     final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
     
     return Container(

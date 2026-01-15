@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/debt_model.dart';
+import '../../data/models/profile_model.dart';
 import '../../data/repositories/debt_repository.dart';
+import '../../data/repositories/profile_repository.dart';
 import '../theme/app_colors.dart';
 import 'debt_detail_screen.dart';
 
@@ -13,7 +15,9 @@ class TransactionListScreen extends StatefulWidget {
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
   final _debtRepository = DebtRepository();
+  final _profileRepository = ProfileRepository();
   List<DebtModel> _debts = [];
+  Map<int, String> _profileNames = {};
   bool _isLoading = true;
   
   // 필터 상태
@@ -23,18 +27,26 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDebts();
+    _loadData();
   }
 
-  Future<void> _loadDebts() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final debts = await _debtRepository.getDebts(
-        transactionType: _transactionTypeFilter,
-        isSettled: _isSettledFilter,
-      );
+      final results = await Future.wait([
+        _debtRepository.getDebts(
+          transactionType: _transactionTypeFilter,
+          isSettled: _isSettledFilter,
+        ),
+        _profileRepository.getProfiles(),
+      ]);
+      
+      final debts = results[0] as List<DebtModel>;
+      final profiles = results[1] as List<ProfileModel>;
+      
       setState(() {
         _debts = debts;
+        _profileNames = {for (var p in profiles) p.id: p.name};
         _isLoading = false;
       });
     } catch (e) {
@@ -45,6 +57,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         );
       }
     }
+  }
+
+  String _getProfileName(DebtModel debt) {
+    return debt.profileName ?? _profileNames[debt.profileId] ?? '알 수 없음';
   }
 
   void _showFilterDialog() {
@@ -102,7 +118,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   onPressed: () {
                     Navigator.pop(context);
                     setState(() {});
-                    _loadDebts();
+                    _loadData();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -171,7 +187,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: _loadDebts,
+                  onRefresh: _loadData,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _debts.length,
@@ -184,7 +200,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           ),
                         );
                         if (result == true) {
-                          _loadDebts();
+                          _loadData();
                         }
                       },
                       child: _buildTransactionItem(_debts[index]),
@@ -195,7 +211,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   Widget _buildTransactionItem(DebtModel debt) {
-    final name = debt.profileName ?? '알 수 없음';
+    final name = _getProfileName(debt);
     final date = '${debt.transactionDate.year}.${debt.transactionDate.month.toString().padLeft(2, '0')}.${debt.transactionDate.day.toString().padLeft(2, '0')}';
     
     return Container(
