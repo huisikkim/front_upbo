@@ -31,6 +31,12 @@ class DebtRepository {
     return data.map((json) => DebtModel.fromJson(json)).toList();
   }
 
+  /// 채무 상세 조회
+  Future<DebtModel> getDebt(int debtId) async {
+    final response = await _dio.get('${ApiConstants.debts}/$debtId');
+    return DebtModel.fromJson(response.data);
+  }
+
   Future<DebtModel> createDebt({
     required int profileId,
     required String transactionType,

@@ -3,6 +3,7 @@ import '../../data/models/debt_model.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../theme/app_colors.dart';
 import 'add_debt_screen.dart';
+import 'debt_detail_screen.dart';
 import 'transaction_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -323,7 +324,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         else
-          ...recentDebts.map((debt) => _buildTransactionItem(debt)),
+          ...recentDebts.map((debt) => GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => DebtDetailScreen(debtId: debt.id)),
+              );
+            },
+            child: _buildTransactionItem(debt),
+          )),
       ],
     );
   }

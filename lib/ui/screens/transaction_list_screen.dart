@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/debt_model.dart';
 import '../../data/repositories/debt_repository.dart';
 import '../theme/app_colors.dart';
+import 'debt_detail_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
   const TransactionListScreen({super.key});
@@ -174,7 +175,17 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _debts.length,
-                    itemBuilder: (context, index) => _buildTransactionItem(_debts[index]),
+                    itemBuilder: (context, index) => GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DebtDetailScreen(debtId: _debts[index].id),
+                          ),
+                        );
+                      },
+                      child: _buildTransactionItem(_debts[index]),
+                    ),
                   ),
                 ),
     );
