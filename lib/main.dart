@@ -22,12 +22,51 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Debt Tracker',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
-        home: const AuthWrapper(),
+        home: const ResponsiveWrapper(child: AuthWrapper()),
       ),
+    );
+  }
+}
+
+class ResponsiveWrapper extends StatelessWidget {
+  final Widget child;
+  
+  const ResponsiveWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // PC 화면(600px 이상)에서는 중앙에 고정 너비로 표시
+        if (constraints.maxWidth > 600) {
+          return Container(
+            color: Colors.grey[200],
+            child: Center(
+              child: Container(
+                width: 600,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: child,
+              ),
+            ),
+          );
+        }
+        // 모바일 화면에서는 전체 화면 사용
+        return child;
+      },
     );
   }
 }

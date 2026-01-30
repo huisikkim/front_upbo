@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'https://port-0-upbo-rm6l2llvxxefd7.sel5.cloudtype.app/api/v1';
+  static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
   
   // Auth endpoints
   static const String register = '/auth/register';
